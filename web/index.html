@@ -3,16 +3,16 @@
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f4f6f8;color:#172c35;font:16px/1.7 system-ui,sans-serif}main{max-width:760px;margin:48px auto;padding:0 24px}h1{font-size:38px;margin:0}h2{font-size:22px;margin-top:0}small,.muted{color:#61727b}section,article{background:white;border:1px solid #dce4e8;border-radius:14px;padding:24px;margin:20px 0}input,textarea{width:100%;padding:12px;border:1px solid #bbcbd2;border-radius:6px;font:inherit;margin:6px 0 16px}button{background:#126b60;color:white;border:0;border-radius:7px;padding:11px 20px;font:inherit;cursor:pointer}button.secondary{background:#e5edeb;color:#164d45}button:disabled{opacity:.5;cursor:wait}article p{white-space:pre-wrap;overflow-wrap:anywhere}label{display:block}summary{cursor:pointer}details{margin-bottom:18px}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.row p{flex:1}#status{min-height:28px;color:#7e341d}#mode{font-size:14px;color:#126b60}fieldset{border:0;padding:0;margin:0;min-width:0}[hidden]{display:none!important}
 .password-field{position:relative;margin:6px 0 16px}.password-field input{margin:0;padding-right:58px}.password-toggle{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:44px;height:44px;display:grid;place-items:center;padding:10px;background:transparent;color:#164d45}.password-toggle:focus-visible{outline:2px solid #126b60;outline-offset:1px}.password-toggle svg{width:24px;height:24px}.password-toggle .eye-slash{display:none}.password-toggle[aria-pressed="true"] .eye-slash{display:block}
+.login-submit{width:100%}.login-links{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:16px}.text-button{background:transparent;color:#126b60;padding:6px 0;font-size:14px;text-decoration:underline;text-underline-offset:3px}#status:empty{display:none}
 </style></head><body><main>
-<small>INFRASTRUCTURE LEARNING LAB</small><h1>Infra Notes</h1><p>小さなアプリから、インフラを育てる。</p><p id="mode">AWSのメモにログイン</p>
-<section id="login-panel"><h2>ログイン</h2><p class="muted">メモアプリのユーザー名とパスワードを入力してください。</p>
+<p id="mode" hidden></p>
+<section id="login-panel"><h2>ログイン</h2>
 <form id="login-form"><fieldset id="login-fields">
 
 <label for="username">ユーザー名</label><input id="username" autocomplete="username" required>
 <label for="password">パスワード</label><div class="password-field"><input id="password" type="password" autocomplete="current-password" required><button id="toggle-password" class="password-toggle" type="button" aria-label="パスワードを表示" aria-controls="password" aria-pressed="false" title="パスワードを表示"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="eye-slash" d="M3 3l18 18"/></svg></button></div>
-<button type="submit">ログイン</button>
-<button id="open-signup" type="button" class="secondary">アカウント作成</button>
-<button id="open-confirm" type="button" class="secondary">登録の確認・コード再送</button>
+<button class="login-submit" type="submit">ログイン</button>
+<div class="login-links"><button id="open-signup" type="button" class="text-button">アカウント作成</button><button id="open-confirm" type="button" class="text-button">登録の確認・コード再送</button></div>
 </fieldset></form>
 </section>
 <section id="signup-panel" hidden><h2>アカウント作成</h2>
@@ -40,6 +40,5 @@
 <div id="workspace" hidden><div class="row"><p id="identity"></p><button id="logout" class="secondary">ログアウト</button></div>
 <section><form id="note-form"><label for="content">新しいメモ</label><textarea id="content" rows="4" maxlength="2000" required placeholder="今日学んだこと、次に試したいこと…"></textarea><button id="save">メモを保存</button></form></section>
 <div class="row"><h2>メモ一覧</h2><button id="reload" class="secondary">再読み込み</button></div><small>新しい順に最大50件表示</small><div id="notes"></div></div>
-<p id="local-option" hidden><button id="local" class="secondary">ローカルの練習用メモを開く</button></p>
-<small>パスワード・トークンはアプリの保存領域に保存しません。ページを再読み込みすると再ログインが必要です。</small>
+
 </main><script type="module" src="/app.mjs"></script></body></html>

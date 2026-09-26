@@ -12,10 +12,9 @@ for (const id of passwordFields) {
   $('toggle-' + id).onclick = () => passwordVisibility(id, $(id).type === 'password');
 }
 hidePasswords();
-let auth = null, endpoint = '', local = false, revision = 0, currentUser = '';
+let auth = null, endpoint = '', revision = 0, currentUser = '';
 let connection = null;
-const localAvailable = ['127.0.0.1', 'localhost'].includes(location.hostname);
-$('local-option').hidden = !localAvailable;
+
 // Connection settings belong to the application, never to the login form.
 const connectionReady = fetch('/config.json', {cache: 'no-store'})
   .then(response => {
@@ -27,22 +26,22 @@ const connectionReady = fetch('/config.json', {cache: 'no-store'})
 function status(text) { $('status').textContent = text; }
 function reset(message = '') {
   hidePasswords();
-  revision++; auth?.signOut(); auth = null; local = false; endpoint = '';
+  revision++; auth?.signOut(); auth = null; endpoint = '';
   $('signup-panel').hidden = true; $('confirmation-panel').hidden = true;
   $('workspace').hidden = true; $('challenge-panel').hidden = true; $('login-panel').hidden = false;
-  $('local-option').hidden = !localAvailable; $('notes').replaceChildren(); $('content').value = '';
+  $('notes').replaceChildren(); $('content').value = '';
   for (const id of ['password','new-password','confirm-password','signup-password','signup-password-confirm','confirmation-code']) $(id).value = '';
-  $('mode').textContent = 'AWSのメモにログイン'; status(message);
+  $('mode').hidden = true; $('mode').hidden = true; status(message);
 }
 async function api(method = 'GET', body) {
   const headers = {'Content-Type':'application/json'};
-  if (!local) {
+  {
     try { headers.Authorization = 'Bearer ' + auth.token(); }
     catch { reset('ログインの有効期限が切れました。もう一度ログインしてください。'); throw Error('再ログインしてください。'); }
   }
   const response = await fetch(endpoint + '/notes', {method, headers,
     body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(20000)});
-  if (response.status === 401 && !local) { reset('ログインを確認できません。もう一度ログインしてください。'); throw Error('再ログインしてください。'); }
+  if (response.status === 401) { reset('ログインを確認できません。もう一度ログインしてください。'); throw Error('再ログインしてください。'); }
   const data = await response.json();
   if (!response.ok) throw Error(data.message || 'APIの処理に失敗しました。');
   return data;
@@ -60,30 +59,29 @@ async function list() {
   if (!data.notes.length) $('notes').textContent = 'まだメモはありません。最初の1件を保存してみましょう。';
 }
 async function showWorkspace() {
-  $('login-panel').hidden = true; $('challenge-panel').hidden = true; $('local-option').hidden = true; $('workspace').hidden = false;
-  $('identity').textContent = local ? 'ローカルの練習用メモ' : currentUser + ' としてログイン中';
-  $('mode').textContent = local ? 'ローカル環境（AWSには保存しません）' : 'AWS環境・シドニー';
-  status(local ? 'ローカル環境を開きました。' : 'ログインしました。');
+  $('login-panel').hidden = true; $('challenge-panel').hidden = true; $('workspace').hidden = false;
+  $('identity').textContent = currentUser + ' としてログイン中';
+  status('ログインしました。');
   try { await list(); } catch { if (!$('workspace').hidden) status('一覧を取得できませんでした。接続設定や通信を確認し、再読み込みしてください。'); }
 }
 async function next(state) {
   if (state === 'new-password') {
-    $('login-panel').hidden = true; $('challenge-panel').hidden = false; $('local-option').hidden = true;
+    $('login-panel').hidden = true; $('challenge-panel').hidden = false;
     status('初回のため、新しいパスワードを設定してください。'); $('new-password').focus();
   } else await showWorkspace();
 }
 $('login-form').onsubmit = async event => {
-  event.preventDefault(); $('login-fields').disabled = true; $('local').disabled = true; status('ログインしています…');
+  event.preventDefault(); $('login-fields').disabled = true; status('ログインしています…');
   try {
     await connectionReady;
     if (!connection) throw Error('アプリの接続設定が完了していません。管理者にお問い合わせください。');
     const config = connection;
-    endpoint = config.endpoint; local = false; revision++; currentUser = $('username').value.trim();
+    endpoint = config.endpoint; revision++; currentUser = $('username').value.trim();
     auth?.signOut(); auth = createAuth(config.clientId);
     const password = $('password').value; $('password').value = '';
     await next(await auth.signIn(currentUser, password));
   } catch (error) { status(error.message); }
-  finally { hidePasswords(); $('password').value = ''; $('login-fields').disabled = false; $('local').disabled = false; }
+  finally { hidePasswords(); $('password').value = ''; $('login-fields').disabled = false; }
 };
 $('challenge-form').onsubmit = async event => {
   event.preventDefault();
@@ -98,7 +96,6 @@ $('challenge-form').onsubmit = async event => {
 };
 $('cancel').onclick = () => reset();
 $('logout').onclick = () => reset('この画面からログアウトしました。');
-$('local').onclick = async () => { if (!localAvailable) return; reset(); local = true; await showWorkspace(); };
 $('reload').onclick = async () => {
   $('reload').disabled = true;
   try { await list(); if (!$('workspace').hidden) status('一覧を更新しました。'); }
@@ -117,8 +114,8 @@ $('note-form').onsubmit = async event => {
 };
 
 function registrationPanel(id) {
-  reset(); $('login-panel').hidden = true; $('local-option').hidden = true; $(id).hidden = false;
-  $('mode').textContent = 'メモアプリのアカウント作成';
+  reset(); $('login-panel').hidden = true; $(id).hidden = false;
+  $('mode').hidden = true;
 }
 async function registrationAuth() {
   await connectionReady;
