@@ -7,9 +7,16 @@ Metadata:
 Resources:
   UserPool:
     Type: AWS::Cognito::UserPool
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: self-service registration with email confirmation; retain existing username login and users
+        must: [Do not replace the pool or change its username schema, Keep email confirmation for new sign-ups]
     Properties:
       AdminCreateUserConfig:
-        AllowAdminCreateUserOnly: true
+        AllowAdminCreateUserOnly: false
+      AutoVerifiedAttributes: [email]
+      VerificationMessageTemplate:
+        DefaultEmailOption: CONFIRM_WITH_CODE
       Policies:
         PasswordPolicy:
           MinimumLength: 12

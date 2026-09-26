@@ -58,3 +58,32 @@ test('tokens are restricted to the Sydney API origin format',()=>{
   for(const endpoint of ['https://attacker.example','http://abc.execute-api.ap-southeast-2.amazonaws.com','https://abc.execute-api.ap-northeast-1.amazonaws.com'])
     assert.throws(()=>validateConfig(endpoint,'client'));
 });
+test('signup sends email and confirms without creating an authenticated session', async()=>{
+  const calls=[];
+  const auth=createAuth('client',async(url,options)=>{calls.push({action:options.headers['X-Amz-Target'].split('.').pop(),body:JSON.parse(options.body)});return ok({UserConfirmed:false});});
+  assert.equal(await auth.signUp(' alice ',' alice@example.test ','DummyPassword123!'),'confirm-signup');
+  assert.deepEqual(calls[0],{action:'SignUp',body:{ClientId:'client',Username:'alice',Password:'DummyPassword123!',UserAttributes:[{Name:'email',Value:'alice@example.test'}]}});
+  assert.throws(()=>auth.token());
+  await auth.confirmSignUp('alice',' 123456 ');
+  assert.deepEqual(calls[1],{action:'ConfirmSignUp',body:{ClientId:'client',Username:'alice',ConfirmationCode:'123456'}});
+  await auth.resendSignUp('alice');
+  assert.equal(calls[2].action,'ResendConfirmationCode');
+  assert.throws(()=>auth.token());
+});
+test('signup delivery quota leads to confirmation recovery, not signup retry',async()=>{
+  const auth=createAuth('client',async()=>({ok:false,json:async()=>({__type:'LimitExceededException'})}));
+  assert.equal(await auth.signUp('alice','alice@example.test','DummyPassword123!'),'delivery-pending');
+  assert.throws(()=>auth.token());
+});
+test('confirmation rejects wrong codes and supports retry',async()=>{
+  let count=0;
+  const auth=createAuth('client',async()=>++count===1?{ok:false,json:async()=>({__type:'CodeMismatchException',message:'private server detail'})}:ok({}));
+  await assert.rejects(auth.confirmSignUp('alice','wrong'),e=>e.code==='CodeMismatchException'&&!e.message.includes('private server detail'));
+  await auth.confirmSignUp('alice','123456');
+  assert.throws(()=>auth.token());
+});
+test('duplicate signup remains an error and does not authenticate',async()=>{
+  const auth=createAuth('client',async()=>({ok:false,json:async()=>({__type:'UsernameExistsException'})}));
+  await assert.rejects(auth.signUp('alice','alice@example.test','DummyPassword123!'),e=>e.code==='UsernameExistsException');
+  assert.throws(()=>auth.token());
+});

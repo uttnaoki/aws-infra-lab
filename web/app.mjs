@@ -1,5 +1,17 @@
 import {createAuth, validateConfig} from './auth.mjs';
 const $ = id => document.getElementById(id);
+const passwordFields = ['password', 'signup-password', 'signup-password-confirm', 'new-password', 'confirm-password'];
+function passwordVisibility(id, visible) {
+  $(id).type = visible ? 'text' : 'password';
+  const button = $('toggle-' + id), label = visible ? 'パスワードを隠す' : 'パスワードを表示';
+  button.setAttribute('aria-pressed', String(visible));
+  button.setAttribute('aria-label', label); button.title = label;
+}
+function hidePasswords() { for (const id of passwordFields) passwordVisibility(id, false); }
+for (const id of passwordFields) {
+  $('toggle-' + id).onclick = () => passwordVisibility(id, $(id).type === 'password');
+}
+hidePasswords();
 let auth = null, endpoint = '', local = false, revision = 0, currentUser = '';
 let connection = null;
 const localAvailable = ['127.0.0.1', 'localhost'].includes(location.hostname);
@@ -14,10 +26,12 @@ const connectionReady = fetch('/config.json', {cache: 'no-store'})
   .catch(() => { status('アプリの接続設定が完了していません。管理者にお問い合わせください。'); });
 function status(text) { $('status').textContent = text; }
 function reset(message = '') {
+  hidePasswords();
   revision++; auth?.signOut(); auth = null; local = false; endpoint = '';
+  $('signup-panel').hidden = true; $('confirmation-panel').hidden = true;
   $('workspace').hidden = true; $('challenge-panel').hidden = true; $('login-panel').hidden = false;
   $('local-option').hidden = !localAvailable; $('notes').replaceChildren(); $('content').value = '';
-  for (const id of ['password','new-password','confirm-password']) $(id).value = '';
+  for (const id of ['password','new-password','confirm-password','signup-password','signup-password-confirm','confirmation-code']) $(id).value = '';
   $('mode').textContent = 'AWSのメモにログイン'; status(message);
 }
 async function api(method = 'GET', body) {
@@ -69,7 +83,7 @@ $('login-form').onsubmit = async event => {
     const password = $('password').value; $('password').value = '';
     await next(await auth.signIn(currentUser, password));
   } catch (error) { status(error.message); }
-  finally { $('password').value = ''; $('login-fields').disabled = false; $('local').disabled = false; }
+  finally { hidePasswords(); $('password').value = ''; $('login-fields').disabled = false; $('local').disabled = false; }
 };
 $('challenge-form').onsubmit = async event => {
   event.preventDefault();
@@ -80,7 +94,7 @@ $('challenge-form').onsubmit = async event => {
   }
   $('challenge-fields').disabled = true; status('パスワードを変更しています…');
   try { await next(await auth.newPassword(password)); } catch (error) { status(error.message); }
-  finally { $('challenge-fields').disabled = false; $('new-password').value = ''; $('confirm-password').value = ''; }
+  finally { hidePasswords(); $('challenge-fields').disabled = false; $('new-password').value = ''; $('confirm-password').value = ''; }
 };
 $('cancel').onclick = () => reset();
 $('logout').onclick = () => reset('この画面からログアウトしました。');
@@ -101,3 +115,54 @@ $('note-form').onsubmit = async event => {
   } catch { if (epoch === revision) status('保存結果を確認できません。再送する前に一覧を再読み込みしてください。'); }
   finally { $('save').disabled = false; }
 };
+
+function registrationPanel(id) {
+  reset(); $('login-panel').hidden = true; $('local-option').hidden = true; $(id).hidden = false;
+  $('mode').textContent = 'メモアプリのアカウント作成';
+}
+async function registrationAuth() {
+  await connectionReady;
+  if (!connection) throw Error('アプリの接続設定が完了していません。管理者にお問い合わせください。');
+  return createAuth(connection.clientId);
+}
+$('open-signup').onclick = () => { registrationPanel('signup-panel'); $('signup-username').focus(); };
+$('open-confirm').onclick = () => { registrationPanel('confirmation-panel'); $('confirmation-username').value = $('username').value.trim(); };
+$('signup-back').onclick = $('confirmation-back').onclick = () => reset();
+$('signup-form').onsubmit = async event => {
+  event.preventDefault();
+  const password = $('signup-password').value;
+  if (password !== $('signup-password-confirm').value) { status('確認用パスワードが一致していません。'); return; }
+  if (password.length < 12 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password) || !/[^a-zA-Z0-9\s]/.test(password)) {
+    status('12文字以上で、大文字・小文字・数字・記号を含めてください。'); return;
+  }
+  const name = $('signup-username').value.trim(), email = $('signup-email').value.trim();
+  const epoch = revision; $('signup-fields').disabled = true; status('登録しています…');
+  try {
+    const client = await registrationAuth();
+    const result = await client.signUp(name, email, password);
+    if (epoch !== revision) return;
+    if (result === 'confirmed') { reset('登録が完了しました。ログインしてください。'); $('username').value = name; }
+    else {
+      registrationPanel('confirmation-panel'); $('confirmation-username').value = name;
+      status(result === 'delivery-pending' ? '登録確認が必要です。メールの送信に失敗したため、時間をおいて確認コードを再送してください。' : 'メールに届いた確認コードを入力してください。');
+      $('confirmation-code').focus();
+    }
+  } catch (error) { if (epoch === revision) status(error.message + ' 通信が途切れた場合は「登録の確認・コード再送」から確認できます。'); }
+  finally { hidePasswords(); $('signup-fields').disabled = false; $('signup-password').value = ''; $('signup-password-confirm').value = ''; }
+};
+async function confirmRegistration(resend) {
+  const name = $('confirmation-username').value.trim();
+  if (!name) { status('ユーザー名を入力してください。'); return; }
+  const code = $('confirmation-code').value.trim(), epoch = revision;
+  $('confirmation-fields').disabled = true; status(resend ? '確認コードを再送しています…' : '確認しています…');
+  try {
+    const client = await registrationAuth();
+    if (resend) await client.resendSignUp(name); else await client.confirmSignUp(name, code);
+    if (epoch !== revision) return;
+    if (resend) status('確認コードを送信しました。メールを確認してください。');
+    else { reset('登録が完了しました。ユーザー名とパスワードでログインしてください。'); $('username').value = name; $('password').focus(); }
+  } catch (error) { if (epoch === revision) status(error.message); }
+  finally { $('confirmation-fields').disabled = false; $('confirmation-code').value = ''; }
+}
+$('confirmation-form').onsubmit = event => { event.preventDefault(); return confirmRegistration(false); };
+$('resend-code').onclick = () => confirmRegistration(true);

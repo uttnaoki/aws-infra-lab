@@ -10,6 +10,11 @@ export function validateConfig(endpoint, clientId) {
   return {endpoint, clientId};
 }
 const messages = {
+  UsernameExistsException: 'このユーザー名は利用できません。登録済みの場合はログインか登録確認へ進んでください。',
+  CodeMismatchException: '確認コードが一致しません。メールを確認してください。',
+  ExpiredCodeException: '確認コードの有効期限が切れました。再送してください。',
+  LimitExceededException: '送信上限に達しました。時間をおいて確認コードを再送してください。',
+  CodeDeliveryFailureException: 'メールを送信できませんでした。時間をおいて再送してください。',
   NotAuthorizedException: 'ユーザー名・パスワード、またはログインの有効期限を確認してください。',
   UserNotFoundException: 'ユーザー名・パスワードを確認してください。',
   InvalidPasswordException: '12文字以上で、大文字・小文字・数字・記号を含むパスワードを設定してください。',
@@ -35,7 +40,8 @@ export function createAuth(clientId, fetcher = fetch, now = Date.now) {
     try { result = await response.json(); } catch { throw Error('認証サービスからの応答を読み取れません。'); }
     if (!response.ok) {
       const type = String(result.__type || '').split('#').pop();
-      throw Error(messages[type] || 'ログインに失敗しました。Cognitoの設定を確認してください。');
+      const error = Error(messages[type] || '認証の処理に失敗しました。時間をおいて再度お試しください。');
+      error.code = type; throw error;
     }
     return result;
   }
@@ -57,6 +63,24 @@ export function createAuth(clientId, fetcher = fetch, now = Date.now) {
     return 'signed-in';
   }
   return {
+    async signUp(name, email, password) {
+      clear();
+      try {
+        const result = await call('SignUp', {ClientId: clientId, Username: name.trim(), Password: password,
+          UserAttributes: [{Name: 'email', Value: email.trim()}]});
+        return result.UserConfirmed ? 'confirmed' : 'confirm-signup';
+      } catch (error) {
+        // Cognito can create an UNCONFIRMED user even if email delivery hits a quota.
+        if (['LimitExceededException', 'CodeDeliveryFailureException'].includes(error.code)) return 'delivery-pending';
+        throw error;
+      }
+    },
+    async confirmSignUp(name, code) {
+      await call('ConfirmSignUp', {ClientId: clientId, Username: name.trim(), ConfirmationCode: code.trim()});
+    },
+    async resendSignUp(name) {
+      await call('ResendConfirmationCode', {ClientId: clientId, Username: name.trim()});
+    },
     async signIn(name, password) {
       clear(); username = name.trim();
       const epoch = generation;
