@@ -1,6 +1,9 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Infra Notes - authenticated learning API
+Description: Infra Notes - authenticated API and HTTPS static frontend
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@3
 Resources:
   UserPool:
     Type: AWS::Cognito::UserPool
@@ -26,10 +29,16 @@ Resources:
         IdToken: hours
   Api:
     Type: AWS::Serverless::HttpApi
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: authenticated notes API; permit only local development and the website origin
+        must: [Keep the Cognito JWT authorizer on both notes routes]
     Properties:
       StageName: '$default'
       CorsConfiguration:
-        AllowOrigins: ['http://127.0.0.1:8080']
+        AllowOrigins:
+          - 'http://127.0.0.1:8080'
+          - !Sub 'https://${WebsiteDistribution.DomainName}'
         AllowHeaders: [Authorization, Content-Type]
         AllowMethods: [GET, POST]
       DefaultRouteSettings:
@@ -94,7 +103,130 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/${Function}'
       RetentionInDays: 7
+  WebsiteBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: private static assets; retained for explicit cleanup after stack deletion
+        must: [Keep public access blocked; distribute through CloudFront OAC]
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireOldAssetVersions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 7
+  WebsiteOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: allow CloudFront to read private S3 assets without public bucket access
+        must: [Sign all origin requests]
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub '${AWS::StackName}-website'
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+  WebsiteHeaders:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: restrict scripts and frame embedding on the login page
+        must: [Allow Cognito and API connections in the selected Region]
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: !Sub '${AWS::StackName}-website'
+        SecurityHeadersConfig:
+          ContentTypeOptions: {Override: true}
+          FrameOptions: {FrameOption: DENY, Override: true}
+          ReferrerPolicy: {ReferrerPolicy: no-referrer, Override: true}
+          StrictTransportSecurity:
+            AccessControlMaxAgeSec: 31536000
+            Override: true
+          ContentSecurityPolicy:
+            ContentSecurityPolicy: !Sub "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cognito-idp.${AWS::Region}.amazonaws.com https://*.execute-api.${AWS::Region}.amazonaws.com; img-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+            Override: true
+  WebsiteDistribution:
+    Type: AWS::CloudFront::Distribution
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: HTTPS public entry point; default CloudFront domain avoids custom domain setup
+        must: [Use the S3 REST origin with OAC, Never upload local data or credentials]
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        HttpVersion: http2
+        IPV6Enabled: true
+        Origins:
+          - Id: website
+            DomainName: !GetAtt WebsiteBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt WebsiteOAC.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        DefaultCacheBehavior:
+          TargetOriginId: website
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          # AWS managed CachingDisabled; simple updates without stale config or invalidation.
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+          ResponseHeadersPolicyId: !Ref WebsiteHeaders
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+  WebsiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: restrict origin reads to this distribution and require TLS
+        must: [Scope CloudFront permission by SourceArn]
+    Properties:
+      Bucket: !Ref WebsiteBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: CloudFrontReadOnly
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub '${WebsiteBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub 'arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${WebsiteDistribution}'
+          - Sid: RequireTLS
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !GetAtt WebsiteBucket.Arn
+              - !Sub '${WebsiteBucket.Arn}/*'
+            Condition:
+              Bool:
+                aws:SecureTransport: 'false'
 Outputs:
+  WebsiteUrl:
+    Value: !Sub 'https://${WebsiteDistribution.DomainName}'
+  WebsiteBucketName:
+    Value: !Ref WebsiteBucket
   ApiUrl:
     Value: !Sub 'https://${Api}.execute-api.${AWS::Region}.amazonaws.com'
   UserPoolId:

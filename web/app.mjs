@@ -2,6 +2,8 @@ import {createAuth, validateConfig} from './auth.mjs';
 const $ = id => document.getElementById(id);
 let auth = null, endpoint = '', local = false, revision = 0, currentUser = '';
 let connection = null;
+const localAvailable = ['127.0.0.1', 'localhost'].includes(location.hostname);
+$('local-option').hidden = !localAvailable;
 // Connection settings belong to the application, never to the login form.
 const connectionReady = fetch('/config.json', {cache: 'no-store'})
   .then(response => {
@@ -14,7 +16,7 @@ function status(text) { $('status').textContent = text; }
 function reset(message = '') {
   revision++; auth?.signOut(); auth = null; local = false; endpoint = '';
   $('workspace').hidden = true; $('challenge-panel').hidden = true; $('login-panel').hidden = false;
-  $('local-option').hidden = false; $('notes').replaceChildren(); $('content').value = '';
+  $('local-option').hidden = !localAvailable; $('notes').replaceChildren(); $('content').value = '';
   for (const id of ['password','new-password','confirm-password']) $(id).value = '';
   $('mode').textContent = 'AWSのメモにログイン'; status(message);
 }
@@ -82,7 +84,7 @@ $('challenge-form').onsubmit = async event => {
 };
 $('cancel').onclick = () => reset();
 $('logout').onclick = () => reset('この画面からログアウトしました。');
-$('local').onclick = async () => { reset(); local = true; await showWorkspace(); };
+$('local').onclick = async () => { if (!localAvailable) return; reset(); local = true; await showWorkspace(); };
 $('reload').onclick = async () => {
   $('reload').disabled = true;
   try { await list(); if (!$('workspace').hidden) status('一覧を更新しました。'); }

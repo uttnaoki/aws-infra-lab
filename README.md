@@ -20,9 +20,9 @@ python3 -m unittest discover -s tests -v
 
 ## 構成
 
-| 項目 | ローカル | AWS（未デプロイ） |
+| 項目 | ローカル | AWS |
 |---|---|---|
-| 画面 | PythonからHTMLを配信 | 最初は同じローカル画面からAPI接続 |
+| 画面 | PythonからHTMLを配信 | CloudFront + 非公開S3（公開準備済み） |
 | API | Python HTTPServer | API Gateway HTTP API → Lambda |
 | 認証 | 固定の開発ユーザー | Cognito → API Gateway JWT認証 |
 | データ | SQLite | DynamoDB |
@@ -37,7 +37,8 @@ AWSではブラウザから送られたユーザーIDを信用せず、API Gatew
 ## 実装状況と制約
 
 - 作成済み：ローカルアプリ、共通API処理、SAM構成、単体テスト、学習手順。
-- 未検証：AWS上でのデプロイ・JWT認証・IAM・DynamoDBの実動作。単体テストでAWSの動作を保証するものではありません。
+- 確認済み：既存APIスタックのデプロイ。ローカル画面からのログイン・メモ保存は利用者が確認。
+- 未検証：CloudFront公開画面での実動作。単体テストでAWSの動作を保証するものではありません。
 - 未実装：S3添付、セルフサインアップ、CI/CD、アラーム、復元、負荷試験。
 - 一覧は最新50件のみ。ページングや編集・削除は当面対象外。
 - 学習用スタックは削除時にテーブル・ユーザープールも削除されます。実データを入れないでください。
@@ -50,3 +51,5 @@ AWSへの構築方法は [AWSデプロイ手順](docs/02-aws.md) を参照して
 - [SAMのJWT認証](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-controlling-access-to-apis-oauth2-authorizer.html)
 - [SAM CLIのインストール](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
 - [Lambda Pythonランタイム](https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html)
+
+画面のインターネット公開は [AWS公開手順](docs/04-publish.md) を参照してください。

@@ -4,13 +4,16 @@
 
 ## 1. 検証して構築する
 
-AWS CLIで学習用アカウントの認証を設定し、このプロジェクトのディレクトリで実行します。
+AWS CLIで学習用アカウントの認証を設定し、このプロジェクトのディレクトリで実行します。`.env.example` を参考に `.env` に `AWS_PROFILE` と `AWS_REGION` を設定します。既存の `.env` は上書きしないでください。
 
 ```sh
+set -a
+source .env
+set +a
 aws sts get-caller-identity
-sam validate --lint
+sam validate --lint --profile "$AWS_PROFILE" --region "$AWS_REGION"
 sam build
-sam deploy --guided
+sam deploy --guided --profile "$AWS_PROFILE" --region "$AWS_REGION"
 ```
 
 初回の目安：Stack Name=`infra-notes-dev`、Region=`ap-southeast-2`。変更セットを確認する設定はYes。IAMロール作成はテンプレートの権限を確認して許可します。APIの認証はCognito JWTで設定済みです。予期せぬ認証なしAPIの警告が出たら設定を見直してください。
@@ -39,7 +42,7 @@ AWSコンソールのCognitoで、出力されたUserPoolIdを選択。ユーザ
 ## 5. 片付けと再現
 
 ```sh
-sam delete --stack-name infra-notes-dev --region ap-southeast-2
+sam delete --stack-name infra-notes-dev --profile "$AWS_PROFILE" --region "$AWS_REGION"
 ```
 
 学習用データ・ユーザーも削除されます。削除対象を確認してください。その後もう一度デプロイし、手作業の差分を記録します。アプリのテーブルだけでなく、SAMの成果物保存用S3・関連ログ等の残存も確認してください。

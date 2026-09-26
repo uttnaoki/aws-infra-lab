@@ -7,3 +7,6 @@ samconfig.toml
 .env
 .env.*
 !.env.example
+
+# Generated public website assets
+dist/
