@@ -53,3 +53,21 @@ AWSへの構築方法は [AWSデプロイ手順](docs/02-aws.md) を参照して
 - [Lambda Pythonランタイム](https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html)
 
 画面のインターネット公開は [AWS公開手順](docs/04-publish.md) を参照してください。
+
+## AWS構成図
+
+[編集用の構成図](docs/diagrams/architecture.drawio) はdraw.io形式です。ブラウザー版の「ファイル → 開く → デバイス」から開けます。
+
+### 利用時の構成
+
+![画面配信・認証・メモ操作のAWS構成](docs/diagrams/runtime.png)
+
+### 構築・更新の流れ
+
+![SAMと公開画面ファイルのデプロイ経路](docs/diagrams/deployment.png)
+
+構成を変更したら `template.yaml` と合わせて図も更新してください。図には実際のアカウントID・公開URL・バケット名を記載していません。
+
+構成図のAWSサービスにはdraw.io内蔵のAWSアイコンを使用しています。サービス名・役割と併せて編集できます。
+
+図を編集したら、draw.ioの「ファイル → 形式を指定してエクスポート → PNG」で各ページを画像に書き出し、上記2枚も更新してください。編集元と画像を一緒にコミットすると、GitHubのREADMEから構成図を閲覧できます。

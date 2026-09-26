@@ -10,3 +10,6 @@ samconfig.toml
 
 # Generated public website assets
 dist/
+
+# macOS metadata
+.DS_Store
