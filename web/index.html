@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Infra Notes</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f6f8;color:#172c35;font:16px/1.7 system-ui,sans-serif}main{max-width:760px;margin:48px auto;padding:0 24px}h1{font-size:38px;margin:0}h2{font-size:22px;margin-top:0}small,.muted{color:#61727b}section,article{background:white;border:1px solid #dce4e8;border-radius:14px;padding:24px;margin:20px 0}input,textarea{width:100%;padding:12px;border:1px solid #bbcbd2;border-radius:6px;font:inherit;margin:6px 0 16px}button{background:#126b60;color:white;border:0;border-radius:7px;padding:11px 20px;font:inherit;cursor:pointer}button.secondary{background:#e5edeb;color:#164d45}button:disabled{opacity:.5;cursor:wait}article p{white-space:pre-wrap;overflow-wrap:anywhere}label{display:block}summary{cursor:pointer}details{margin-bottom:18px}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.row p{flex:1}#status{min-height:28px;color:#7e341d}#mode{font-size:14px;color:#126b60}fieldset{border:0;padding:0;margin:0;min-width:0}[hidden]{display:none!important}
+</style></head><body><main>
+<small>INFRASTRUCTURE LEARNING LAB</small><h1>Infra Notes</h1><p>小さなアプリから、インフラを育てる。</p><p id="mode">AWSのメモにログイン</p>
+<section id="login-panel"><h2>ログイン</h2><p class="muted">Cognitoに登録したメモアプリ用ユーザーでログインします。</p>
+<form id="login-form"><fieldset id="login-fields">
+
+<label for="username">ユーザー名</label><input id="username" autocomplete="username" required>
+<label for="password">パスワード</label><input id="password" type="password" autocomplete="current-password" required>
+<button type="submit">ログイン</button>
+</fieldset></form>
+</section>
+<section id="challenge-panel" hidden><h2>初回パスワードの変更</h2><p>一時パスワードから、今後使うパスワードへ変更してください。</p><form id="challenge-form"><fieldset id="challenge-fields">
+<label for="new-password">新しいパスワード</label><input id="new-password" type="password" autocomplete="new-password" minlength="12" required>
+<label for="confirm-password">新しいパスワード（確認）</label><input id="confirm-password" type="password" autocomplete="new-password" minlength="12" required>
+<p class="muted">12文字以上で、大文字・小文字・数字・記号を含めてください。</p><div class="row"><button type="submit">変更してログイン</button><button id="cancel" type="button" class="secondary">戻る</button></div>
+</fieldset></form></section>
+<p id="status" role="status" aria-live="polite"></p>
+<div id="workspace" hidden><div class="row"><p id="identity"></p><button id="logout" class="secondary">ログアウト</button></div>
+<section><form id="note-form"><label for="content">新しいメモ</label><textarea id="content" rows="4" maxlength="2000" required placeholder="今日学んだこと、次に試したいこと…"></textarea><button id="save">メモを保存</button></form></section>
+<div class="row"><h2>メモ一覧</h2><button id="reload" class="secondary">再読み込み</button></div><small>新しい順に最大50件表示</small><div id="notes"></div></div>
+<p id="local-option"><button id="local" class="secondary">ローカルの練習用メモを開く</button></p>
+<small>パスワード・トークンはアプリの保存領域に保存しません。ページを再読み込みすると再ログインが必要です。</small>
+</main><script type="module" src="/app.mjs"></script></body></html>
