@@ -48,7 +48,7 @@ node --test frontend/tests/*.test.mjs
 
 ローカルサーバーは `frontend/` の画面を配信します。公開用ビルドは `python3 scripts/build_site.py` で、従来どおり `dist/` に4ファイルだけを生成します。フロントエンドのテストは公開されません。SAMは `backend/app/` をLambdaのコードとして扱い、バックエンドのテストもデプロイ対象に含めません。
 
-フロントエンドの更新は公開ファイルの生成・S3へのアップロード、バックエンドの更新は `sam build`・`sam deploy` で反映します。ディレクトリ整理後は、次回のバックエンド反映前に `sam build` を再実行してください。
+フロントエンドの更新は `python3 scripts/publish_site.py` で `.env` の読み込み・公開ファイルの生成・S3へのアップロードをまとめて実行し、バックエンドの更新は `sam build`・`sam deploy` で反映します。ディレクトリ整理後は、次回のバックエンド反映前に `sam build` を再実行してください。
 
 ## 構成
 

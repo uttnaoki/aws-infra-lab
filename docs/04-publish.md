@@ -77,23 +77,17 @@ aws cloudformation describe-stacks --stack-name infra-notes-dev --query 'Stacks[
 
 表示されたバケット名を、Git管理対象外の `.env` の `WEBSITE_BUCKET` に設定します。既に設定済みの場合は、この出力と一致することを確認してください。`.env.example` は空欄のまま共有します。
 
-設定後は、同じターミナルで `.env` を再読み込みします。`WEBSITE_BUCKET` はアップロードコマンド用で、公開する `config.json` には含まれません。
+設定後は、次の1コマンドで公開ファイルの生成とアップロードを実行します。
 
 ```sh
-set -a
-source .env
-set +a
-: "${WEBSITE_BUCKET:?Set WEBSITE_BUCKET in .env}"
+python3 scripts/publish_site.py
 ```
 
-以下の4ファイルだけをアップロードします。リポジトリ全体をアップロードしないでください。
+リポジトリ直下の `.env` から `API_URL`、`COGNITO_CLIENT_ID`、`AWS_PROFILE`、`AWS_REGION`、`WEBSITE_BUCKET` を自動で読み込みます。設定済みの環境変数がある場合はそちらを優先します。このコマンドのための `source .env` や事前の `build_site.py` 実行は不要です。AWS CLIがPATH上にあり、指定プロファイルのログインが有効である必要があります。
 
-```sh
-aws s3 cp dist/auth.mjs "s3://${WEBSITE_BUCKET}/auth.mjs" --content-type 'text/javascript; charset=utf-8' --cache-control no-store
-aws s3 cp dist/app.mjs "s3://${WEBSITE_BUCKET}/app.mjs" --content-type 'text/javascript; charset=utf-8' --cache-control no-store
-aws s3 cp dist/config.json "s3://${WEBSITE_BUCKET}/config.json" --content-type 'application/json; charset=utf-8' --cache-control no-store
-aws s3 cp dist/index.html "s3://${WEBSITE_BUCKET}/index.html" --content-type 'text/html; charset=utf-8' --cache-control no-store
-```
+HTML・JavaScript2個・公開設定JSONの4ファイルだけを、正しいContent-Typeと `Cache-Control: no-store` を付けて送信します。HTMLは最後です。CLI用の設定や `.env` は公開しません。現在はCloudFrontのキャッシュが無効なので、キャッシュ無効化は実行しません。
+
+失敗時はそこで停止します。ただし、それまでに成功したアップロードは残り、自動で元には戻しません。CLIのエラー原因を解消したあと、同じコマンドを再実行してください。ログイン期限切れの場合は `aws login --profile aws-learning` を実行します。完了後は以下の公開URLで検証します。
 
 ## 5. 公開URLで検証
 

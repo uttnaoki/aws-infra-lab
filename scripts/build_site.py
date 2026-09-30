@@ -12,7 +12,7 @@ ASSETS = ('index.html', 'app.mjs', 'auth.mjs')
 
 
 
-def public_settings(env_path=ROOT / '.env'):
+def public_settings(env_path=ROOT / '.env', keys=('API_URL', 'COGNITO_CLIENT_ID')):
     """Read public build settings as data; never execute shell expressions."""
     settings = {}
     if env_path.exists():
@@ -22,7 +22,7 @@ def public_settings(env_path=ROOT / '.env'):
                 line = line[7:].lstrip()
             key, separator, value = line.partition('=')
             key = key.strip()
-            if not separator or key not in ('API_URL', 'COGNITO_CLIENT_ID'):
+            if not separator or key not in keys:
                 continue
             try:
                 parts = shlex.split(value, comments=True, posix=True)
@@ -32,7 +32,7 @@ def public_settings(env_path=ROOT / '.env'):
                 raise ValueError(f'Invalid .env setting on line {line_number}: {key}') from None
             settings[key] = parts[0] if parts else ''
     return {key: os.environ.get(key, settings.get(key, ''))
-            for key in ('API_URL', 'COGNITO_CLIENT_ID')}
+            for key in keys}
 
 
 def build(output, endpoint, client_id):
