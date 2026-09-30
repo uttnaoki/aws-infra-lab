@@ -23,7 +23,7 @@ def build(output, endpoint, client_id):
     if any(p.name not in allowed or not p.is_file() or p.is_symlink() for p in output.iterdir()):
         raise ValueError('Output directory contains unexpected files; inspect it before continuing')
     for name in ASSETS:
-        shutil.copyfile(ROOT / 'web' / name, output / name)
+        shutil.copyfile(ROOT / 'frontend' / name, output / name)
     (output / 'config.json').write_text(json.dumps({
         'endpoint': endpoint, 'clientId': client_id}, indent=2) + '\n')
 

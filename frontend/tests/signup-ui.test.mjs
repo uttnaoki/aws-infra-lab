@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
 test('registration UI confirms, resumes and clears passwords without logging in', async()=>{
-  const html=readFileSync(new URL('../web/index.html',import.meta.url),'utf8');
+  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
   const elements=new Map([...html.matchAll(/id="([^"]+)"/g)].map(m=>[m[1],{value:'',hidden:false,disabled:false,textContent:'',focus(){},replaceChildren(){},setAttribute(key,value){this[key]=value;}}]));
   const original={document:globalThis.document,location:globalThis.location,fetch:globalThis.fetch};
   const requests=[];
@@ -15,7 +15,7 @@ test('registration UI confirms, resumes and clears passwords without logging in'
       requests.push(options.headers['X-Amz-Target'].split('.').pop());
       return {ok:true,json:async()=>({UserConfirmed:false})};
     };
-    await import('../web/app.mjs');
+    await import('../app.mjs');
     const el=id=>elements.get(id),event={preventDefault(){}};
     el('password').value='DummyPassword123!';
     el('toggle-password').onclick();

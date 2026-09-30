@@ -4,7 +4,7 @@ import os
 import sqlite3
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-from app.handler import handle
+from backend.app.handler import handle
 
 ROOT = Path(__file__).parent
 
@@ -40,7 +40,7 @@ class Server(BaseHTTPRequestHandler):
             content_type = 'application/json; charset=utf-8'
         elif self.path in assets:
             filename, content_type = assets[self.path]
-            data = (ROOT / 'web' / filename).read_bytes()
+            data = (ROOT / 'frontend' / filename).read_bytes()
         else:
             self.api('GET')
             return

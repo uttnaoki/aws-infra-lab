@@ -1,6 +1,6 @@
 import json
 import unittest
-from app.handler import handle
+from backend.app.handler import handle
 from local import LocalStore
 
 

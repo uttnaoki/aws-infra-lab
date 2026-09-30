@@ -78,7 +78,7 @@ Resources:
   Function:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: app/
+      CodeUri: backend/app/
       Handler: handler.handler
       Runtime: python3.13
       MemorySize: 128

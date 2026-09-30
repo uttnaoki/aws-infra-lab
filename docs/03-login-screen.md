@@ -43,9 +43,9 @@ Gitには値が空の `.env.example` とコードを含め、実際の `.env` �
 
 ## 実装と制約
 
-- `web/auth.mjs`：既存のUSER_PASSWORD_AUTHとNEW_PASSWORD_REQUIREDに対応。ブラウザーからCognitoのHTTPSエンドポイントへ直接送信。
-- `web/app.mjs`：画面切替、API呼び出し、メモ表示。API Gatewayがトークンの正当性を検証。
-- `web/index.html`：ログイン、初回変更、メモの画面。
+- `frontend/auth.mjs`：既存のUSER_PASSWORD_AUTHとNEW_PASSWORD_REQUIREDに対応。ブラウザーからCognitoのHTTPSエンドポイントへ直接送信。
+- `frontend/app.mjs`：画面切替、API呼び出し、メモ表示。API Gatewayがトークンの正当性を検証。
+- `frontend/index.html`：ログイン、初回変更、メモの画面。
 - `local.py`：公開するファイルを固定リストで配信。パスワードをローカルサーバーへ送らない。
 - 接続先とClientIdは、環境変数から生成される `/config.json` から読み込む。localStorageは使用しない。認証情報はJavaScriptのメモリ内のみ。再読み込み・タブ終了で失われる。
 - 現在のテンプレートのIDトークン有効期間（1時間）で再ログインを促す。期限・認証エラーはAPI側でも判定する。自動更新は未実装。
@@ -56,6 +56,7 @@ Gitには値が空の `.env.example` とコードを含め、実際の `.env` �
 ## テスト
 
 ```sh
-node --test tests/auth.test.mjs
+node --test frontend/tests/*.test.mjs
+python3 -m unittest discover -s backend/tests -v
 python3 -m unittest discover -s tests -v
 ```
