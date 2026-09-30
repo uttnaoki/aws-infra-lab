@@ -15,8 +15,40 @@ python3 local.py
 ブラウザで http://127.0.0.1:8080 を開きます。停止は Ctrl+C。メモは `local.sqlite3` に保存され、再起動しても残ります。ローカル版は固定ユーザーを使う開発専用で、127.0.0.1だけで待ち受けます。
 
 ```sh
+python3 -m unittest discover -s backend/tests -v
 python3 -m unittest discover -s tests -v
 ```
+
+## ソースコードの配置
+
+同じリポジトリ内でフロントエンドとバックエンドを分けています。
+
+```text
+aws-infra-lab/
+├── frontend/          # HTML・JavaScript
+│   └── tests/         # 認証・画面のテスト
+├── backend/
+│   ├── app/           # Lambdaの処理
+│   └── tests/         # API処理のテスト
+├── tests/             # 公開設定・サイト生成の共通テスト
+├── template.yaml      # 共通のAWS構成
+├── scripts/           # 公開ファイル生成など
+├── local.py           # ローカル開発サーバー
+├── login.py           # CLIログイン用の補助ツール
+└── docs/              # 起動・デプロイ手順
+```
+
+以下のコマンドはすべてリポジトリのルートから実行します。
+
+```sh
+python3 -m unittest discover -s backend/tests -v
+python3 -m unittest discover -s tests -v
+node --test frontend/tests/*.test.mjs
+```
+
+ローカルサーバーは `frontend/` の画面を配信します。公開用ビルドは `python3 scripts/build_site.py` で、従来どおり `dist/` に4ファイルだけを生成します。フロントエンドのテストは公開されません。SAMは `backend/app/` をLambdaのコードとして扱い、バックエンドのテストもデプロイ対象に含めません。
+
+フロントエンドの更新は `python3 scripts/publish_site.py` で `.env` の読み込み・公開ファイルの生成・S3へのアップロードをまとめて実行し、バックエンドの更新は `sam build`・`sam deploy` で反映します。ディレクトリ整理後は、次回のバックエンド反映前に `sam build` を再実行してください。
 
 ## 構成
 

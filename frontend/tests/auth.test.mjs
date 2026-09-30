@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createAuth, validateConfig} from '../web/auth.mjs';
+import {createAuth, validateConfig} from '../auth.mjs';
 const ok = body => ({ok:true, json:async()=>body});
 const signed = () => ok({AuthenticationResult:{IdToken:'test-token'}});
 test('normal login, expiration and local logout', async()=>{

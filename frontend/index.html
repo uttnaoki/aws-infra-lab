@@ -3,6 +3,7 @@
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f4f6f8;color:#172c35;font:16px/1.7 system-ui,sans-serif}main{max-width:760px;margin:48px auto;padding:0 24px}h1{font-size:38px;margin:0}h2{font-size:22px;margin-top:0}small,.muted{color:#61727b}section,article{background:white;border:1px solid #dce4e8;border-radius:14px;padding:24px;margin:20px 0}input,textarea{width:100%;padding:12px;border:1px solid #bbcbd2;border-radius:6px;font:inherit;margin:6px 0 16px}button{background:#126b60;color:white;border:0;border-radius:7px;padding:11px 20px;font:inherit;cursor:pointer}button.secondary{background:#e5edeb;color:#164d45}button:disabled{opacity:.5;cursor:wait}article p{white-space:pre-wrap;overflow-wrap:anywhere}label{display:block}summary{cursor:pointer}details{margin-bottom:18px}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.row p{flex:1}#status{min-height:28px;color:#7e341d}#mode{font-size:14px;color:#126b60}fieldset{border:0;padding:0;margin:0;min-width:0}[hidden]{display:none!important}
 .password-field{position:relative;margin:6px 0 16px}.password-field input{margin:0;padding-right:58px}.password-toggle{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:44px;height:44px;display:grid;place-items:center;padding:10px;background:transparent;color:#164d45}.password-toggle:focus-visible{outline:2px solid #126b60;outline-offset:1px}.password-toggle svg{width:24px;height:24px}.password-toggle .eye-slash{display:none}.password-toggle[aria-pressed="true"] .eye-slash{display:block}
+.app-updated{text-align:right;margin:18px 0 0;font-size:12px}
 .login-submit{width:100%}.login-links{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:16px}.text-button{background:transparent;color:#126b60;padding:6px 0;font-size:14px;text-decoration:underline;text-underline-offset:3px}#status:empty{display:none}
 </style></head><body><main>
 <p id="mode" hidden></p>
@@ -14,6 +15,7 @@
 <button class="login-submit" type="submit">ログイン</button>
 <div class="login-links"><button id="open-signup" type="button" class="text-button">アカウント作成</button><button id="open-confirm" type="button" class="text-button">登録の確認・コード再送</button></div>
 </fieldset></form>
+<p class="app-updated muted"><small>最終更新：<time>__APP_UPDATED_AT__</time></small></p>
 </section>
 <section id="signup-panel" hidden><h2>アカウント作成</h2>
 <form id="signup-form"><fieldset id="signup-fields">
