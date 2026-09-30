@@ -41,6 +41,8 @@ class Server(BaseHTTPRequestHandler):
         elif self.path in assets:
             filename, content_type = assets[self.path]
             data = (ROOT / 'frontend' / filename).read_bytes()
+            if filename == 'index.html':
+                data = data.replace(b'__APP_UPDATED_AT__', 'ローカル開発版'.encode('utf-8'))
         else:
             self.api('GET')
             return

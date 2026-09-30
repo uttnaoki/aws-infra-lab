@@ -63,6 +63,8 @@ export COGNITO_CLIENT_ID="$(aws cloudformation describe-stacks --stack-name infr
 python3 scripts/build_site.py
 ```
 
+このコマンドはリポジトリ直下の `.env` から `API_URL` と `COGNITO_CLIENT_ID` を自動で読み込みます。生成だけなら `source .env` は不要です。設定済みの環境変数を優先します。値は `KEY=value` または引用符付きで指定でき、変数展開・コマンド実行は行いません。AWS CLIを直接実行するときの環境変数読み込みは引き続き必要です。
+
 `dist/` にHTML・JavaScript2個・公開設定JSONだけを作ります。実行環境の全変数や `.env` はコピーしません。
 予期しないファイルが既に `dist/` にある場合は処理を止めます。内容を確認してから整理してください。
 `dist/` 自体もGit除外対象です。
@@ -123,3 +125,7 @@ CloudFormationの出力 `WebsiteUrl` を開きます。
 - [CloudFrontの管理キャッシュポリシー](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html)
 
 AWS CLIの環境変数の優先順位は[公式資料](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html)を参照してください。
+
+## ログイン画面の更新日時
+
+ログイン画面の「最終更新」は `python3 scripts/build_site.py` で公開ファイルを生成した日時（日本時間）です。アップロード完了日時ではありません。生成した `dist/index.html` をアップロードすると表示も更新されます。ローカルサーバーでは「ローカル開発版」と表示します。
